@@ -1,5 +1,5 @@
 # journal-cms
-# 🖋️ Journal CMS
+# Journal CMS
 
 A lightweight, custom-built blogging platform designed for speed and security.
 
