@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Categories | Journal</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">JOURNAL</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="blog-listing.html">Blog</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li id="loginProfile" ></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Categories</h1>
+        <div id="category_body_id" class="grid" style="margin-top: 2rem;">
+            
+        </div>
+    </div>
+</body>
+<script>
+    axios.defaults.withCredentials = true;
+    function getAllCategories(){
+        axios.get('../backend/blog-php/category.php')
+        .then((res) => {
+            console.log(res)
+            renderCategories(res.data.categories)
+        }).catch((err) => {
+            console.log(err)
+        })
+    }
+    function renderCategories(categories){
+        const categoryBodyHtml = document.getElementById('category_body_id')
+        categories.forEach(category => {
+            const categotyBody = `
+            <a href="blog-listing.html?category=${category.category_id}" style="background: white; padding: 2rem; text-align: center; border-radius: 8px; border: 1px solid var(--border);">
+                <h2>${category.category_name}</h2>
+                <p>${category.post_count} Posts</p>
+            </a>
+            `
+            categoryBodyHtml.innerHTML += categotyBody
+        })
+    }
+    getAllCategories()
+</script>
+</html>

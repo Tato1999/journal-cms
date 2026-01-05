@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Blog | Home</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">JOURNAL</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="blog-listing.html">Blog</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li id="loginProfile" ></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <h1>Exploring the Modern Web</h1>
+        <p>A collection of thoughts, tutorials, and insights into the world of design and development.</p>
+    </header>
+
+    <main class="container">
+        <h2 style="margin-bottom: 2rem;">Latest Posts</h2>
+        <div class="grid" id="body_of_cart">
+            
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Journal Blog. Built with Semantic HTML5.</p>
+    </footer>
+</body>
+<script>
+    axios.defaults.withCredentials = true;
+    function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for(let i = 0; i <ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+        }
+        function checkUserPermission(){
+            return axios.get('../backend/blog-php/helpers/check_permission.php')
+                .then(res => res.data.level);
+        }
+    function checkIfLogin(){
+        if(getCookie("PHPSESSID")){
+            const loginProfile = document.getElementById('loginProfile');
+            checkUserPermission().then(level => {
+                if(level === "Admin"){
+                    loginProfile.innerHTML = `<a href="admin/dashboard.html">Dashboard</a>`;
+                }else{
+                    loginProfile.innerHTML = `<a>Profile</a>`;
+                }
+            });
+        }else{
+            const loginProfile = document.getElementById('loginProfile');
+            loginProfile.innerHTML = `<a href="login.html">Login</a>`;
+        }
+    }
+    function getAllPosts() {
+        axios.get(`../backend/blog-php/index.php?page=${1}`)
+            .then(function (res) {
+                console.log(res.data);
+                renderPosts(res.data.posts);
+            })
+            .catch(function (error) {
+                console.error('Error fetching posts:', error);
+            });
+    }
+
+
+    function renderPosts(posts){
+        console.log(posts)
+        const body_of_cart = document.getElementById('body_of_cart');
+        body_of_cart.innerHTML = ""
+        posts.forEach(post => {
+            const doc = new DOMParser().parseFromString(post.content, 'text/html');
+            const decodedHTML = doc.documentElement.textContent;
+            post_for_add = `
+                <article class='card'>
+                    <img src='${post.image_path}' alt="Post" class="card-img">
+                    <div class="card-content">
+                        <span class="category-tag">${post.category_name[0]}</span>
+                        <h3 class="card-title"><a href="single-post.html?id=${post.post_id}">${post.title}</a></h3>
+                        <p class="card-meta">${post.created_at}</p>
+                        <p>${decodedHTML.substring(0,200)}...</p>
+                    </div>
+                </article>`
+            body_of_cart.innerHTML += post_for_add
+        });
+    }
+    checkIfLogin()
+    getAllPosts()
+</script>
+
+</html>

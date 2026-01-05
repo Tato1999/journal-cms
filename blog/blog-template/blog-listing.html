@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Posts | Journal</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">JOURNAL</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="blog-listing.html">Blog</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li id="loginProfile" ></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Archive: All Blog Posts</h1>
+        <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border);">
+        
+        <div class="grid">
+        
+        </div>
+    </div>
+</body>
+<script>
+    axios.defaults.withCredentials = true;
+    function getAllPostOfCategories(){
+        var path
+        if(!new URLSearchParams(window.location.search).get('category')){
+            path = `../backend/blog-php/blog_listing.php`
+        }else{
+            path = `../backend/blog-php/blog_listing.php?id=${new URLSearchParams(window.location.search).get('category')}`
+        }
+        axios.get(path)
+        .then((res) => {
+            console.log(res)
+            renderAllPost(res.data.posts)
+        }).catch((err) => {
+            console.log(err)
+        })
+    }
+    function renderAllPost(posts){
+        const mainGrid = document.querySelector('.grid');
+        posts.forEach(post => {
+            const doc = new DOMParser().parseFromString(post.content, 'text/html');
+            const decodedHTML = doc.documentElement.textContent;
+            let postBodyhtml = `
+                <article class="card">
+                    <img src="${post.image_path}" class="card-img">
+                    <div class="card-content">
+                        <span class="category-tag">
+                            ${post.category_name}
+                        </span>
+                        <h3><a href="single-post.html?id=${post.post_id}">${post.title}</a></h3>
+                        <p class="card-meta">${new Date(post.created_at).toLocaleDateString()}</p>
+                        <p>${decodedHTML}</p>
+                    </div>
+                </article>`
+            mainGrid.insertAdjacentHTML('beforeend', postBodyhtml);
+        });
+        
+    }
+    getAllPostOfCategories()
+</script>
+</html>

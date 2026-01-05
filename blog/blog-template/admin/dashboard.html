@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | Journal</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
+    <style>
+        .multi-select {
+            position: relative;
+            width: 100%;
+        }
+    
+        .select-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    
+        .dropdown {
+            display: none; /* Initially hidden */
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 9999;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+    
+        /* This is the class that makes it appear */
+        .dropdown.show {
+            display: block !important;
+        }
+    
+        .dropdown-item {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+    
+        .dropdown-item:hover {
+            background: #f9f9f9;
+        }
+    
+        .dropdown-item input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo">JOURNAL</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../blog-listing.html">Blog</a></li>
+                <li><a href="../categories.html">Categories</a></li>
+                <li><a href="../about.html">About</a></li>
+                <li><a href="../contact.html">Contact</a></li>
+                <li id="loginProfile" ></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="admin-wrapper">
+        <aside class="sidebar">
+            <h2>Admin Panel</h2>
+            <nav class="sidebar-links">
+                <a href="#overview" class="active">Dashboard</a>
+                <a href="#add-post">Add New Post</a>
+                <a href="#categories">Categories</a>
+                <a href="#users">Manage Users</a>
+                <a onclick="logOut()" style="margin-top: 2rem; color: #f87171;">Logout</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <section id="overview">
+                <h1>Dashboard Overview</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="post-table-body" >
+                        
+                    </tbody>
+                </table>
+            </section>
+
+            <hr style="margin: 3rem 0; border-color: var(--border);">
+
+            <section id="add-post">
+                <h2>Add New Post</h2>
+                <form enctype="multipart/form-data" style="background: white; padding: 2rem; border-radius: 8px; border: 1px solid var(--border);">
+                    <div class="form-group">
+                        <label>Post Title</label>
+                        <input id="postTitleInput" type="text" name="title" placeholder="Enter post title" required>
+                    </div>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="multi-select">
+                            <div class="select-box" onclick="toggleDropdown()">
+                                <span id="selected-text">Select categories</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                        
+                            <div class="dropdown" id="category-dropdown">
+                                
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label>Featured Image</label>
+                            
+                            <div id="file-upload-section">
+                                <input id="fileInputId" type="file" name="image" accept="image/*">
+                                <small id="file-note" style="color: var(--text-light); display: block; margin-top: 4px;">
+                                    Upload from your computer
+                                </small>
+                            </div>
+                        
+                            <div style="text-align: center; margin: 10px 0; font-size: 0.8rem; color: #999;">— OR —</div>
+                        
+                            <div id="url-upload-section">
+                                <input type="url" name="image_url" id="imageUrlId" 
+                                       placeholder="Paste Google Image Link (https://...)" 
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px;">
+                                <small id="url-note" style="color: var(--text-light); display: block; margin-top: 4px;">
+                                    If a link is provided, the file above will be ignored.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="pistContentInput" name="content" rows="10" placeholder="Write your post content here..." required></textarea>
+                    </div>
+                    
+                </form>
+                <button onclick="sendNewPost()" class="btn">Publish Post</button>
+            </section>
+
+            <hr style="margin: 3rem 0; border-color: var(--border);">
+
+            <section id="categories" class="grid" style="grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+                <div>
+                    <h2>Add Category</h2>
+                    <form style="background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <div class="form-group">
+                            <label>Category Name</label>
+                            <input id="categoryInputId" type="text" placeholder="e.g. Lifestyle">
+                        </div>
+                        
+                    </form>
+                    <button onclick="postCategory()" class="btn" style="width: 100%;">Add Category</button>
+                </div>
+                <div>
+                    <h2>Existing Categories</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Posts Count</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="category-table-body">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+<script>
+
+    tinymce.init({
+        selector: '#pistContentInput', // Use the ID of your existing textarea
+        plugins: 'lists link image table code help wordcount',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | help'
+    });
+    const fileInput = document.getElementById('fileInputId');
+    const urlInput = document.getElementById('imageUrlId');
+
+    // When user types in the URL box
+    urlInput.addEventListener('input', function() {
+        if (this.value.trim() !== "") {
+            // If there's a URL, fade out the file input and disable it
+            fileInput.style.opacity = "0.5";
+            fileInput.style.pointerEvents = "none";
+            fileInput.value = ""; // Clear any selected file
+        } else {
+            // If URL is cleared, restore the file input
+            fileInput.style.opacity = "1";
+            fileInput.style.pointerEvents = "auto";
+        }
+    });
+
+    // When user selects a file from PC
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            urlInput.value = "";
+            urlInput.placeholder = "File selected from PC...";
+        }
+    });
+    function sendNewPost() {
+        const file = document.getElementById('fileInputId').files[0];
+        const formData = new FormData();
+        formData.append('name', 'post');
+        formData.append('title', document.getElementById('postTitleInput').value);
+        formData.append('category', checkboxes_ids);
+        formData.append('content', document.getElementById('pistContentInput').value);
+        const imageUrl = document.getElementById('imageUrlId').value.trim();
+        console.log(imageUrl)
+        if (imageUrl !== "") {
+            formData.append('image_url', imageUrl);
+        }else{
+            formData.append('image_url', '');
+        }
+        formData.append('image', file);
+        axios.post("http://localhost/test/blog/backend/blog-php/admin/get-data.php", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        }).then((res) => {
+            console.log(res.data.posts);
+            if(res.data.status == 'success'){
+                alert("Post added successfully!");
+                renderPosts(res.data.posts);
+            }else{
+                alert(res.data.message);
+            }
+            
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    function detelePost(id){
+        axios.delete("http://localhost/test/blog/backend/blog-php/admin/get-data.php", {
+            data: {
+                name: 'delete_post',
+                id: id
+            }
+        }).then((res) => {
+            console.log(res.data);
+            if(res.data.status == 'success'){
+                console.log(res.data.posts)
+                renderPosts(res.data.posts);
+            }else{
+                alert(res.data.message);
+            }
+            
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    function postCategory(){
+        axios.post("http://localhost/test/blog/backend/blog-php/admin/get-data.php", {
+            name:'category',
+            title: document.getElementById('categoryInputId').value
+        }).then((res) => {
+            console.log(res.data);
+            if(res.data.status == 'success'){
+                renderCategories(res.data.categories);
+            }else{
+                alert(res.data.message);
+            }
+            
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    function deleteCategory(id){
+        axios.delete("http://localhost/test/blog/backend/blog-php/admin/get-data.php", {
+            data: {
+                name: 'delete_category',
+                id: id
+            }
+        }).then((res) => {
+            console.log(res.data);
+            if(res.data.status == 'success'){
+                renderCategories(res.data.categories);
+            }else{
+                alert(res.data.message);
+            }
+            
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    function fetchData(){
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var data = JSON.parse(this.responseText);
+                console.log(data);
+                renderCategories(data.categories);
+                renderPosts(data.posts);
+            }
+        };
+        xmlhttp.open("GET", "http://localhost/test/blog/backend/blog-php/admin/get-data.php", true);
+        xmlhttp.send();
+    }
+    fetchData();
+
+    function renderPosts(posts){
+
+        var postsBody = document.getElementById('post-table-body');
+        postsBody.innerHTML = '';
+        
+        posts.forEach(post => {
+            const row = `
+                <tr>
+                    <td>${post.title}</td>
+                    <td>
+                    <div class="multi-category">
+                            <div id="category-dropdown_post_${post.post_id}">
+                                
+                            </div>
+                        </div>
+                    </td>
+                    <td>${post.created_at}</td>
+                    <td><span style="color: green;">Published</span></td>
+                    <td><a href="#" style="color: var(--primary-color);">Edit</a> | <a onclick="detelePost(${post.post_id})" style="color: red;">Delete</a></td>
+                </tr>
+            `;
+            postsBody.innerHTML += row;
+            const dropdown = document.getElementById(`category-dropdown_post_${post.post_id}`);
+            
+            post.category_name.forEach(category => {
+                const categorySpan = `<span style="background: #f3f4f6; color: #374151; padding: 2px 6px; border-radius: 4px; margin-right: 4px; font-size: 0.875rem;">${category}</span>`;
+                dropdown.innerHTML += categorySpan;
+            });
+        });
+
+    }
+
+    let selectedCategoryIds = []; 
+
+    function renderCategories(categories) {
+        const categoriesBody = document.getElementById('category-table-body');
+        const dropdown = document.getElementById('category-dropdown');
+        
+        categoriesBody.innerHTML = "";
+        dropdown.innerHTML = "";
+
+        categories.forEach(category => {
+            const row = `
+                <tr>
+                    <td>${category.name}</td>
+                    <td>${category.post_count}</td>
+                    <td><button onclick="deleteCategory(${category.id})" style="color: red; background: none; border: none; cursor: pointer;">Delete</button></td>
+                </tr>
+            `;
+            categoriesBody.innerHTML += row;
+
+            const item = `
+                <label class="dropdown-item">
+                    <input type="checkbox" value="${category.id}" data-name="${category.name}" onchange="updateSelection()">
+                    ${category.name}
+                </label>
+            `;
+            dropdown.innerHTML += item;
+        });
+    }
+    
+    const tableBody = document.getElementById('user-table-body');
+    const searchInput = document.getElementById('userSearch');
+
+    function renderUsers(users) {
+        tableBody.innerHTML = ""; 
+
+        users.forEach(user => {
+            const row = `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td><strong style="color: ${user.level_name === 'Admin' ? 'var(--primary-color)' : 'inherit'}">${user.level_name}</strong></td>
+                    <td>
+                        <button onclick="editUser(${user.id})" style="color: var(--primary-color); background: none; border: none; cursor: pointer;">Permissions</button> | 
+                        <button onclick="deleteUser(${user.id})" style="color: red; background: none; border: none; cursor: pointer;">Remove</button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    }
+    function toggleDropdown() {
+        const dropdown = document.getElementById("category-dropdown");
+        const arrow = document.querySelector(".arrow");
+        dropdown.classList.toggle("show");
+        arrow.classList.toggle("rotate");
+    }
+    var checkboxes_ids = []
+    function updateSelection() {
+        const dropdown = document.getElementById('category-dropdown');
+        const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        const selectedText = document.getElementById('selected-text');
+        
+        if (checkboxes.length === 0) {
+            selectedText.innerText = "Select categories";
+        } else if (checkboxes.length <= 2) {
+            const names = Array.from(checkboxes).map(cb => cb.parentElement.textContent.trim());
+            selectedText.innerText = names.join(', ');
+        } else {
+            selectedText.innerText = checkboxes.length + " categories selected";
+        }
+        
+        checkboxes_ids.push(checkboxes[checkboxes.length - 1].value)
+    }
+
+    // 3. Close the dropdown if you click anywhere else on the page
+    window.onclick = function(event) {
+        if (!event.target.closest('.multi-select')) {
+            const dropdown = document.getElementById("category-dropdown");
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        }
+    }
+    function logOut() {
+        document.cookie = "PHPSESSID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        
+        localStorage.clear();
+        sessionStorage.clear();
+
+        window.location.href = "../login.html";
+    }
+</script>
+</html>

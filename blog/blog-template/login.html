@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Journal</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+    <div style="background: white; padding: 2.5rem; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 400px;">
+        <h2 style="margin-bottom: 1.5rem; text-align: center;">Admin Login</h2>
+        <form action="../backend/blog-php/login.php" method="post">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">Login</button>
+        </form>
+    </div>
+</body>
+<script>
+    axios.defaults.withCredentials = true;
+    console.log(window.location.search);
+    if(window.location.search.includes('error') && window.location.search.includes('user_not_found')) {
+        alert("User not found. Please check your username and try again.");
+    }else if(window.location.search.includes('error') && window.location.search.includes("incorrect_password")) {
+        alert("Incorrect password. Please try again.");
+    }
+</script>
+</html>

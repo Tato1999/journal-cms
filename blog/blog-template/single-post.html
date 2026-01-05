@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Post Title | Journal</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">JOURNAL</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="blog-listing.html">Blog</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li id="loginProfile" ></li>
+            </ul>
+        </div>
+    </nav>
+
+    <article class="container">
+        <header class="post-header">
+            <span class="category-tag">Technology</span>
+            <h1 style="font-size: 3rem; margin: 1rem 0;"><span id="title_span"></span></h1>
+            <p class="card-meta">Published by <span id="top_level_author_name_id" ></span> on <span id="top_level_author_create_time" ></span></p>
+        </header>
+        <div id="post_image_div">
+            <img src="https://via.placeholder.com/1100x500" class="post-featured-img" alt="Featured Image">
+        </div>
+        <div id="post_body_id" class="post-body">
+        
+        </div>
+
+        <section style="margin-top: 3rem; padding: 1.5rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; text-align: center;">
+            <h4 style="margin-bottom: 0.5rem;">Did you find this helpful? Rate this post:</h4>
+            <div class="rating-container" style="justify-content: center;">
+                <input type="radio" name="post-rating" id="rs5" value="5"><label for="rs5"></label>
+                <input type="radio" name="post-rating" id="rs4" value="4"><label for="rs4"></label>
+                <input type="radio" name="post-rating" id="rs3" value="3"><label for="rs3"></label>
+                <input type="radio" name="post-rating" id="rs2" value="2"><label for="rs2"></label>
+                <input type="radio" name="post-rating" id="rs1" value="1"><label for="rs1"></label>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Current Rating: <span id="rating_value_id" ></span>/5 (<span id="rating_count_id" ></span> votes)</p>
+        </section>
+
+        <section class="author-box">
+            <div id="author_avatar_id" class="author-avatar">
+                
+            </div>
+            <div>
+                <h4 id="autor_h4_id" >Jane Doe</h4>
+            </div>
+        </section>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid var(--border);">
+
+        <section id="comment-form-section">
+            <h3>Leave a Comment</h3>
+            <p style="color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem;">Your email address will not be published. Required fields are marked *</p>
+            
+            <form class="comment-form" style="background: var(--white); padding: 2rem; border-radius: 8px; border: 1px solid var(--border);">
+                <div class="form-group">
+                    <label>Comment*</label>
+                    <textarea rows="5" placeholder="Share your thoughts..." required></textarea>
+                </div>
+            </form>
+            <button onclick="sendComments()" class="btn">Post Comment</button>
+        </section>
+
+        <section style="margin-top: 4rem;">
+            <h3 style="margin-bottom: 1.5rem;">Discussion (<span id="discusion_count"></span>)</h3>
+            <div id="commentn_section_body_id">
+
+            </div>
+            
+
+        </section>
+    </article>
+</body>
+<script>
+    axios.defaults.withCredentials = true;
+    var is_logined_in = false;
+    function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for(let i = 0; i <ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+        }
+        function checkUserPermission(){
+            return axios.get('../backend/blog-php/helpers/check_permission.php')
+                .then(res => res.data.level);
+        }
+    function checkIfLogin(){
+        if(getCookie("PHPSESSID")){
+            const loginProfile = document.getElementById('loginProfile');
+            checkUserPermission().then(level => {
+                if(level === "Admin"){
+                    console.log("check admin")
+                    loginProfile.innerHTML = `<a href="admin/dashboard.html">Dashboard</a>`;
+                }else{
+                    loginProfile.innerHTML = `<a>Profile</a>`;
+                }
+            });
+            is_logined_in =  true;
+        }else{
+            const loginProfile = document.getElementById('loginProfile');
+            loginProfile.innerHTML = `<a href="login.html">Login</a>`;
+            is_logined_in =  false;
+        }
+    }
+
+    function getPostData(){
+        axios.get(`../backend/blog-php/post.php?id=${new URLSearchParams(window.location.search).get('id')}`)
+            .then(function (res) {
+                console.log(res.data);
+                renderPost(res.data.posts[0]);
+                renderComents(res.data.comments, res.data.comments.length);
+                renderRatings(res.data.ratings[0])
+            })
+            .catch(function (error) {
+                console.error('Error fetching post:', error);
+            });
+    }
+    function renderPost(post){
+        document.getElementById('title_span').innerText = post.title;
+        document.title = `${post.title} | Journal`;
+        const doc = new DOMParser().parseFromString(post.content, 'text/html');
+        const decodedHTML = doc.documentElement.textContent;
+        document.getElementById('post_body_id').innerHTML = decodedHTML;
+        document.querySelector('.post-header .category-tag').innerText = post.category_name[0];
+        document.getElementById('post_image_div').innerHTML = `<img src='${post.image_path}' class="post-featured-img" alt="Featured Image">`;
+        document.getElementById('autor_h4_id').innerText = post.user_name;
+        document.getElementById('author_avatar_id').innerHTML = `<img src='${post.user_image}' alt="Author Avatar">`;
+        document.getElementById('top_level_author_name_id').innerText = post.user_name;
+        document.getElementById('top_level_author_create_time').innerText = new Date(post.created_at).toLocaleDateString();
+        
+    }
+    function renderComents(comments,length){
+        document.getElementById('discusion_count').innerText = length;
+        const comment_section = document.getElementById('commentn_section_body_id');
+        comments.forEach(comment => {
+            let comment_body = `
+                <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <strong id="name_of_comment_user" style="display: block; margin-bottom: 0.2rem;">${comment.user_name}</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase;">${new Date(comment.comment_created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div style="color: #fbbf24; font-size: 0.8rem;">
+                            ${
+                                (() => {
+                                    let stars = '';
+                                    for (let i = 1; i <= 5; i++) {
+                                        if (i <= comment.rating) {
+                                            stars += '★';
+                                        } else {
+                                            stars += '☆';
+                                        }
+                                    }
+                                    return stars;
+                                })()
+                            }
+                            </div>
+                        </div>
+                        <p style="margin-top: 1rem;">${comment.comment}</p>
+                    </div>
+                `;
+            comment_section.innerHTML += comment_body;
+        })
+        
+    }
+    function renderRatings(rating){
+        document.getElementById("rating_value_id").innerText = Number(rating.rating_value).toFixed(1)
+        document.getElementById("rating_count_id").innerText = rating.rating_counts
+    }
+    function getSelectedRating() {
+        const selected = document.querySelector('input[name="post-rating"]:checked');
+
+        if (selected) {
+            console.log("Selected stars:", selected.value);
+            return selected.value;
+        } else {
+            console.log("No rating selected");
+            return 0;
+        }
+    }
+    function sendComments(){
+        if(is_logined_in){
+            selected_rating = getSelectedRating();
+            comment_text = document.querySelector('.comment-form textarea').value;
+            if(comment_text.trim() === ""){
+                alert("Comment cannot be empty.");
+                return;
+            }
+            if(selected_rating === 0){
+                alert("Please select a rating.");
+                return;
+            }
+            var formData = new FormData();
+            formData.append('post_id', new URLSearchParams(window.location.search).get('id'));
+            formData.append('rating', selected_rating);
+            formData.append('comment', comment_text);
+            axios.post('../backend/blog-php/post.php', formData)
+                .then(function (response) {
+                    alert("Comment posted successfully!");
+                    location.reload();
+                })
+                .catch(function (error) {
+                    console.error('Error posting comment:', error);
+                    alert("Failed to post comment. Please try again.");
+                });
+            alert("Rating: "+selected_rating+" Comment: "+comment_text);
+        }else{
+            alert("Please login to post comments."+is_logined_in);
+        }
+    }
+    checkIfLogin()
+    getPostData()
+</script>
+</html>
